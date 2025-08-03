@@ -1,18 +1,30 @@
-import { IMessageService } from './IMessageService';
+type MessageMethod = (message: string) => void;
 
-export class TimestampDecorator implements IMessageService {
-  constructor(private wrappee: IMessageService) {}
+export function withTimestamp(
+  target: any,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+): void {
+  const originalMethod = descriptor.value as MessageMethod;
 
-  send(message: string): void {
-    const timestamp = new Date().toISOString().replace('T', ' ').substring(0, 19);
-    this.wrappee.send(`[${timestamp}] ${message}`);
-  }
+  descriptor.value = function (message: string) {
+    const now = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    const timestamp = `[${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}]`;
+    const modifiedMessage = `${timestamp} ${message}`;
+    originalMethod.call(this, modifiedMessage);
+  };
 }
 
-export class UppercaseDecorator implements IMessageService {
-  constructor(private wrappee: IMessageService) {}
+export function uppercase(
+  target: any,
+  propertyKey: string,
+  descriptor: PropertyDescriptor
+): void {
+  const originalMethod = descriptor.value as MessageMethod;
 
-  send(message: string): void {
-    this.wrappee.send(message.toUpperCase());
-  }
+  descriptor.value = function (message: string) {
+    const modifiedMessage = message.toUpperCase();
+    originalMethod.call(this, modifiedMessage);
+  };
 }
